@@ -1,7 +1,7 @@
 # Chore Manager backlog
 
 Based on `_docs/plan.md`. The Django project and registered `chores` app already
-exist. Tasks are ordered by dependency; tasks 1–3 are complete and tasks 4–8 are pending.
+exist. Tasks are ordered by dependency; tasks 1–5 are complete and tasks 6–8 are pending.
 
 Planning assumption: a deadline is a calendar date. An unfinished chore becomes
 overdue when its deadline is earlier than the current local date; chores due
@@ -36,7 +36,7 @@ today are not overdue.
 
 ## 4. Mark overdue chores
 
-- [ ] Derive overdue status from the deadline and completion flag, and display
+- [x] Derive overdue status from the deadline and completion flag, and display
   **Overdue** beside qualifying incomplete chores.
 - Done when: tests cover yesterday, today, and tomorrow, plus a completed chore
   with a past deadline. Only unfinished chores before today are overdue.
@@ -44,7 +44,7 @@ today are not overdue.
 
 ## 5. Complete a chore
 
-- [ ] Add a completion button to each incomplete chore and a POST-only,
+- [x] Add a completion button to each incomplete chore and a POST-only,
   CSRF-protected action that saves completion and redirects to the list.
 - Done when: completing a chore moves it to **Completed** and removes its overdue
   label; tests verify persistence and that GET cannot change completion.

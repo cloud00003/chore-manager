@@ -11,7 +11,7 @@
         <p><a href="{% url 'chores:chore_create' %}">Create a chore</a></p>
         <section aria-labelledby="incomplete-heading">
             <h2 id="incomplete-heading">Incomplete</h2>
-            {% include "chores/chore_items.html" with chores=incomplete_chores empty_message="No incomplete chores." only %}
+            {% include "chores/chore_items.html" with chores=incomplete_chores empty_message="No incomplete chores." csrf_token=csrf_token only %}
         </section>
         <section aria-labelledby="completed-heading">
             <h2 id="completed-heading">Completed</h2>

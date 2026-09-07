@@ -3,8 +3,15 @@
         {% for chore in chores %}
             <li>
                 <h3>{{ chore.title }}</h3>
+                {% if chore.is_overdue %}<p><strong>Overdue</strong></p>{% endif %}
                 <p>Responsible person: {{ chore.responsible_person }}</p>
                 <p>Deadline: <time datetime="{{ chore.deadline|date:'Y-m-d' }}">{{ chore.deadline|date:"Y-m-d" }}</time></p>
+                {% if not chore.is_completed %}
+                    <form method="post" action="{% url 'chores:chore_complete' chore.pk %}">
+                        {% csrf_token %}
+                        <button type="submit">Mark as completed</button>
+                    </form>
+                {% endif %}
             </li>
         {% endfor %}
     </ul>

@@ -1,5 +1,5 @@
-from django.shortcuts import redirect, render
-from django.views.decorators.http import require_http_methods
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import ChoreForm
 from .models import Chore
@@ -27,3 +27,11 @@ def chore_create(request):
         form.save()
         return redirect("chores:chore_list")
     return render(request, "chores/chore_form.html", {"form": form})
+
+
+@require_POST
+def chore_complete(request, pk):
+    chore = get_object_or_404(Chore, pk=pk)
+    chore.is_completed = True
+    chore.save(update_fields=["is_completed"])
+    return redirect("chores:chore_list")
