@@ -1,7 +1,7 @@
 # Chore Manager backlog
 
 Based on `_docs/plan.md`. The Django project and registered `chores` app already
-exist. Tasks are ordered by dependency; tasks 1–7 are complete and task 8 is pending.
+exist. Tasks are ordered by dependency; tasks 1–8 are complete.
 
 Planning assumption: a deadline is a calendar date. An unfinished chore becomes
 overdue when its deadline is earlier than the current local date; chores due
@@ -69,13 +69,18 @@ today are not overdue.
 
 ## 8. Verify the complete flow
 
-- [ ] Run Django system checks and the test suite; manually walk through create,
+- [x] Run Django system checks and the test suite; manually walk through create,
   list, overdue display, edit, complete, and delete.
-- [ ] Check links, form errors, and empty states, and update the README with
+- [x] Check links, form errors, and empty states, and update the README with
   usage and test commands.
 - Done when: the plan's main user flow works end to end and setup instructions
   match the implementation.
 - Depends on: 3–7.
+- Verification: 23 tests passed; system checks passed; migrations are current.
+  Live HTTP forms verified create, list, overdue, edit, complete, and delete with
+  a temporary chore that was removed afterward. Links, validation errors, and
+  cancel were checked live; empty states passed in the test suite. No visual
+  browser review was performed.
 
 ## Scope limits
 
