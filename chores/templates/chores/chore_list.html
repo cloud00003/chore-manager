@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chore Manager</title>
+</head>
+<body>
+    <main>
+        <h1>Chore Manager</h1>
+        <p><a href="{% url 'chores:chore_create' %}">Create a chore</a></p>
+        <section aria-labelledby="incomplete-heading">
+            <h2 id="incomplete-heading">Incomplete</h2>
+            {% include "chores/chore_items.html" with chores=incomplete_chores empty_message="No incomplete chores." only %}
+        </section>
+        <section aria-labelledby="completed-heading">
+            <h2 id="completed-heading">Completed</h2>
+            {% include "chores/chore_items.html" with chores=completed_chores empty_message="No completed chores yet." only %}
+        </section>
+    </main>
+</body>
+</html>

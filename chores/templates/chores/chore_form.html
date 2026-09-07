@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Create a chore | Chore Manager</title>
+</head>
+<body>
+    <main>
+        <h1>Create a chore</h1>
+        <form method="post" action="{% url 'chores:chore_create' %}">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Create chore</button>
+        </form>
+        <p><a href="{% url 'chores:chore_list' %}">Cancel</a></p>
+    </main>
+</body>
+</html>

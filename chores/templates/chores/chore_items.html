@@ -1,0 +1,13 @@
+{% if chores %}
+    <ul>
+        {% for chore in chores %}
+            <li>
+                <h3>{{ chore.title }}</h3>
+                <p>Responsible person: {{ chore.responsible_person }}</p>
+                <p>Deadline: <time datetime="{{ chore.deadline|date:'Y-m-d' }}">{{ chore.deadline|date:"Y-m-d" }}</time></p>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>{{ empty_message }}</p>
+{% endif %}

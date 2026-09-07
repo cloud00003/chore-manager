@@ -1,0 +1,178 @@
+from datetime import date
+
+from django.core.exceptions import ValidationError
+from django.test import Client, TestCase
+from django.urls import reverse
+
+from .models import Chore
+
+
+class ChoreModelTests(TestCase):
+    def test_chore_fields_and_default_are_persisted(self):
+        chore = Chore.objects.create(
+            title="Wash the dishes",
+            responsible_person="Alex",
+            deadline=date(2026, 9, 10),
+        )
+
+        saved_chore = Chore.objects.get(pk=chore.pk)
+
+        self.assertEqual(saved_chore.title, "Wash the dishes")
+        self.assertEqual(saved_chore.responsible_person, "Alex")
+        self.assertEqual(saved_chore.deadline, date(2026, 9, 10))
+        self.assertFalse(saved_chore.is_completed)
+
+    def test_required_fields_are_validated(self):
+        for field, empty_value in (
+            ("title", ""),
+            ("responsible_person", ""),
+            ("deadline", None),
+        ):
+            with self.subTest(field=field):
+                chore = Chore(
+                    title="Wash the dishes",
+                    responsible_person="Alex",
+                    deadline=date(2026, 9, 10),
+                )
+                setattr(chore, field, empty_value)
+
+                with self.assertRaises(ValidationError) as error:
+                    chore.full_clean()
+
+                self.assertIn(field, error.exception.message_dict)
+
+
+class ChoreListTests(TestCase):
+    def test_empty_list_at_home_page(self):
+        self.assertEqual(reverse("chores:chore_list"), "/")
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "chores/chore_list.html")
+        self.assertContains(response, "Incomplete")
+        self.assertContains(response, "Completed")
+        self.assertContains(response, "No incomplete chores.")
+        self.assertContains(response, "No completed chores yet.")
+
+    def test_chores_render_in_the_correct_sections(self):
+        Chore.objects.create(
+            title="Wash dishes",
+            responsible_person="Alex",
+            deadline=date(2026, 9, 10),
+        )
+        Chore.objects.create(
+            title="Sweep floor",
+            responsible_person="Sam",
+            deadline=date(2026, 9, 9),
+            is_completed=True,
+        )
+
+        response = self.client.get(reverse("chores:chore_list"))
+        self.assertEqual(response.status_code, 200)
+        page = response.content.decode()
+        incomplete = page.split('<section aria-labelledby="incomplete-heading">')[
+            1
+        ].split("</section>")[0]
+        completed = page.split('<section aria-labelledby="completed-heading">')[
+            1
+        ].split("</section>")[0]
+
+        for value in ("Wash dishes", "Alex", "2026-09-10"):
+            self.assertIn(value, incomplete)
+            self.assertNotIn(value, completed)
+        for value in ("Sweep floor", "Sam", "2026-09-09"):
+            self.assertIn(value, completed)
+            self.assertNotIn(value, incomplete)
+        self.assertNotContains(response, "No incomplete chores.")
+        self.assertNotContains(response, "No completed chores yet.")
+
+    def test_each_section_has_an_independent_empty_state(self):
+        for is_completed in (False, True):
+            with self.subTest(is_completed=is_completed):
+                chore = Chore.objects.create(
+                    title="Wash dishes",
+                    responsible_person="Alex",
+                    deadline=date(2026, 9, 10),
+                    is_completed=is_completed,
+                )
+                response = self.client.get(reverse("chores:chore_list"))
+                if is_completed:
+                    self.assertContains(response, "No incomplete chores.")
+                    self.assertNotContains(response, "No completed chores yet.")
+                else:
+                    self.assertNotContains(response, "No incomplete chores.")
+                    self.assertContains(response, "No completed chores yet.")
+                chore.delete()
+
+
+class ChoreCreateTests(TestCase):
+    def setUp(self):
+        self.url = reverse("chores:chore_create")
+        self.valid_data = {
+            "title": "Wash dishes",
+            "responsible_person": "Alex",
+            "deadline": "2026-09-10",
+        }
+
+    def test_list_links_to_create_page_and_get_does_not_save(self):
+        response = self.client.get(reverse("chores:chore_list"))
+        self.assertContains(response, f'href="{self.url}"')
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "chores/chore_form.html")
+        for field in self.valid_data:
+            self.assertContains(response, f'name="{field}"')
+        self.assertContains(response, 'type="date"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertNotContains(response, 'name="is_completed"')
+        self.assertEqual(Chore.objects.count(), 0)
+
+    def test_valid_submission_creates_incomplete_chore_and_redirects(self):
+        response = self.client.post(
+            self.url, {**self.valid_data, "is_completed": "true"}
+        )
+
+        self.assertRedirects(response, reverse("chores:chore_list"))
+        chore = Chore.objects.get()
+        self.assertEqual(chore.title, "Wash dishes")
+        self.assertEqual(chore.responsible_person, "Alex")
+        self.assertEqual(chore.deadline, date(2026, 9, 10))
+        self.assertFalse(chore.is_completed)
+        self.assertContains(self.client.get(response.url), "Wash dishes")
+
+    def test_invalid_submissions_show_errors_without_saving(self):
+        cases = [
+            ({}, "title", "This field is required."),
+            ({**self.valid_data, "title": "   "}, "title", "This field is required."),
+            ({**self.valid_data, "responsible_person": ""}, "responsible_person", "This field is required."),
+            ({**self.valid_data, "deadline": ""}, "deadline", "This field is required."),
+            ({**self.valid_data, "deadline": "2026-02-30"}, "deadline", "Enter a valid date."),
+            ({**self.valid_data, "deadline": "not-a-date"}, "deadline", "Enter a valid date."),
+        ]
+        for data, field, message in cases:
+            with self.subTest(data=data):
+                response = self.client.post(self.url, data)
+                self.assertEqual(response.status_code, 200)
+                self.assertFormError(response.context["form"], field, message)
+                self.assertContains(response, message)
+                if data.get("title") == "Wash dishes":
+                    self.assertContains(response, 'value="Wash dishes"')
+                self.assertEqual(Chore.objects.count(), 0)
+
+    def test_submission_requires_csrf_token(self):
+        client = Client(enforce_csrf_checks=True)
+        response = client.post(self.url, self.valid_data)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Chore.objects.count(), 0)
+
+        client.get(self.url)
+        response = client.post(
+            self.url,
+            {
+                **self.valid_data,
+                "csrfmiddlewaretoken": client.cookies["csrftoken"].value,
+            },
+        )
+        self.assertRedirects(response, reverse("chores:chore_list"))
+        self.assertEqual(Chore.objects.count(), 1)
