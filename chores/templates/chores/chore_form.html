@@ -3,15 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Create a chore | Chore Manager</title>
+    <title>{% if chore %}Edit chore{% else %}Create a chore{% endif %} | Chore Manager</title>
 </head>
 <body>
     <main>
-        <h1>Create a chore</h1>
-        <form method="post" action="{% url 'chores:chore_create' %}">
+        <h1>{% if chore %}Edit chore{% else %}Create a chore{% endif %}</h1>
+        <form method="post" action="{% if chore %}{% url 'chores:chore_edit' chore.pk %}{% else %}{% url 'chores:chore_create' %}{% endif %}">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit">Create chore</button>
+            <button type="submit">{% if chore %}Save changes{% else %}Create chore{% endif %}</button>
         </form>
         <p><a href="{% url 'chores:chore_list' %}">Cancel</a></p>
     </main>

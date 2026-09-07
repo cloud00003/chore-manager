@@ -4,8 +4,7 @@ A simple web app for managing shared household chores for families and roommates
 
 Create chores through the website and view them in Incomplete and Completed
 sections. Incomplete chores with past deadlines are marked Overdue, and chores
-can be marked as completed. Editing and deleting chores through the website are
-not implemented yet.
+can be marked as completed. Chores in either section can be edited or deleted.
 
 ## Local setup (PowerShell)
 
@@ -24,6 +23,9 @@ name, and deadline, then submit to add an incomplete chore.
 Select **Mark as completed** to move a chore to Completed and remove its overdue
 label. Deadlines before today are overdue; deadlines today are not. Today follows
 the Django time zone setting (currently UTC).
+Select **Edit** to update a chore's details without changing its completion
+status. Select **Delete** to open a confirmation page, then confirm deletion or
+choose **Cancel** to return to the list.
 
 The Django project is in `config/`. The `chores/` app is registered in
 `config/settings.py` and contains the chore model, list page, and create form.

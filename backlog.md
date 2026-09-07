@@ -1,7 +1,7 @@
 # Chore Manager backlog
 
 Based on `_docs/plan.md`. The Django project and registered `chores` app already
-exist. Tasks are ordered by dependency; tasks 1–5 are complete and tasks 6–8 are pending.
+exist. Tasks are ordered by dependency; tasks 1–7 are complete and task 8 is pending.
 
 Planning assumption: a deadline is a calendar date. An unfinished chore becomes
 overdue when its deadline is earlier than the current local date; chores due
@@ -52,8 +52,8 @@ today are not overdue.
 
 ## 6. Edit a chore
 
-- [ ] Link chores in both sections to an edit page that reuses the chore form.
-- [ ] Save changes to title/description, responsible person, and deadline while
+- [x] Link chores in both sections to an edit page that reuses the chore form.
+- [x] Save changes to title/description, responsible person, and deadline while
   preserving completion status; redirect to the list after a successful POST.
 - Done when: tests cover editing incomplete and completed chores, validation
   errors, and a missing chore returning 404.
@@ -61,7 +61,7 @@ today are not overdue.
 
 ## 7. Delete a chore
 
-- [ ] Add a delete link for chores in both sections and a confirmation page with
+- [x] Add a delete link for chores in both sections and a confirmation page with
   a cancel link. Delete only through a CSRF-protected POST.
 - Done when: tests verify deletion, a missing chore returning 404, and that
   opening the confirmation page leaves the chore intact.

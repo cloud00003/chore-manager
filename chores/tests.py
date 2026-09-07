@@ -110,6 +110,116 @@ class ChoreCompleteTests(TestCase):
         self.assertTrue(self.chore.is_completed)
 
 
+class ChoreManagementTests(TestCase):
+    def setUp(self):
+        self.chore = Chore.objects.create(
+            title="Wash dishes", responsible_person="Alex",
+            deadline=date(2026, 9, 10),
+        )
+        self.edit_url = reverse("chores:chore_edit", args=[self.chore.pk])
+        self.delete_url = reverse("chores:chore_delete", args=[self.chore.pk])
+        self.data = {
+            "title": "Sweep floor", "responsible_person": "Sam",
+            "deadline": "2026-09-12",
+        }
+
+    def test_links_and_prefilled_edit_form_for_both_sections(self):
+        for completed in (False, True):
+            with self.subTest(completed=completed):
+                self.chore.is_completed = completed
+                self.chore.save()
+                response = self.client.get(reverse("chores:chore_list"))
+                self.assertContains(response, f'href="{self.edit_url}"')
+                self.assertContains(response, f'href="{self.delete_url}"')
+                response = self.client.get(self.edit_url)
+                self.assertContains(response, 'value="Wash dishes"')
+                self.assertContains(response, 'value="Alex"')
+                self.assertContains(response, 'value="2026-09-10"')
+                self.assertContains(response, f'action="{self.edit_url}"')
+                self.assertNotContains(response, 'name="is_completed"')
+                self.chore.refresh_from_db()
+                self.assertEqual(self.chore.title, "Wash dishes")
+                self.assertEqual(self.chore.is_completed, completed)
+
+    def test_edit_preserves_completion_status(self):
+        for completed in (False, True):
+            with self.subTest(completed=completed):
+                self.chore.is_completed = completed
+                self.chore.save()
+                response = self.client.post(
+                    self.edit_url, {**self.data, "is_completed": str(not completed)}
+                )
+                self.assertRedirects(response, reverse("chores:chore_list"))
+                self.chore.refresh_from_db()
+                self.assertEqual(self.chore.title, "Sweep floor")
+                self.assertEqual(self.chore.responsible_person, "Sam")
+                self.assertEqual(self.chore.deadline, date(2026, 9, 12))
+                self.assertEqual(self.chore.is_completed, completed)
+                self.assertEqual(Chore.objects.count(), 1)
+
+    def test_invalid_edit_shows_errors_without_changing_record(self):
+        for field, value in (
+            ("title", ""), ("responsible_person", ""),
+            ("deadline", ""), ("deadline", "2026-02-30"),
+        ):
+            with self.subTest(field=field, value=value):
+                response = self.client.post(self.edit_url, {**self.data, field: value})
+                self.assertEqual(response.status_code, 200)
+                error = response.context["form"].errors[field][0]
+                self.assertContains(response, error)
+                self.chore.refresh_from_db()
+                self.assertEqual(self.chore.title, "Wash dishes")
+                self.assertEqual(self.chore.responsible_person, "Alex")
+                self.assertEqual(self.chore.deadline, date(2026, 9, 10))
+
+    def test_delete_confirmation_and_cancel_leave_chore_intact(self):
+        response = self.client.get(self.delete_url)
+        self.assertContains(response, "Wash dishes")
+        self.assertContains(response, f'action="{self.delete_url}"')
+        self.assertContains(response, f'href="{reverse("chores:chore_list")}"')
+        self.client.get(reverse("chores:chore_list"))
+        self.assertTrue(Chore.objects.filter(pk=self.chore.pk).exists())
+
+    def test_delete_removes_only_selected_chore_in_either_section(self):
+        for completed in (False, True):
+            with self.subTest(completed=completed):
+                target = Chore.objects.create(
+                    title="Delete me", responsible_person="Sam",
+                    deadline=date(2026, 9, 11), is_completed=completed,
+                )
+                response = self.client.post(
+                    reverse("chores:chore_delete", args=[target.pk])
+                )
+                self.assertRedirects(response, reverse("chores:chore_list"))
+                self.assertFalse(Chore.objects.filter(pk=target.pk).exists())
+                self.assertTrue(Chore.objects.filter(pk=self.chore.pk).exists())
+
+    def test_missing_chore_returns_404_for_get_and_post(self):
+        self.chore.delete()
+        for url in (self.edit_url, self.delete_url):
+            for method in (self.client.get, self.client.post):
+                with self.subTest(url=url, method=method.__name__):
+                    self.assertEqual(method(url).status_code, 404)
+
+    def test_edit_and_delete_require_csrf(self):
+        client = Client(enforce_csrf_checks=True)
+        for url in (self.edit_url, self.delete_url):
+            with self.subTest(url=url):
+                self.assertEqual(client.post(url, self.data).status_code, 403)
+                self.chore.refresh_from_db()
+                self.assertEqual(self.chore.title, "Wash dishes")
+                response = client.get(url)
+                self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        token = client.cookies["csrftoken"].value
+        response = client.post(
+            self.edit_url, {**self.data, "csrfmiddlewaretoken": token}
+        )
+        self.assertRedirects(response, reverse("chores:chore_list"))
+        response = client.post(self.delete_url, {"csrfmiddlewaretoken": token})
+        self.assertRedirects(response, reverse("chores:chore_list"))
+        self.assertFalse(Chore.objects.filter(pk=self.chore.pk).exists())
+
+
 class ChoreModelTests(TestCase):
     def test_chore_fields_and_default_are_persisted(self):
         chore = Chore.objects.create(

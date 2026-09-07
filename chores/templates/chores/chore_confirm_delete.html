@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Delete chore | Chore Manager</title>
+</head>
+<body>
+    <main>
+        <h1>Delete chore</h1>
+        <p>Are you sure you want to delete “{{ chore.title }}”?</p>
+        <p>Responsible person: {{ chore.responsible_person }}</p>
+        <p>Deadline: {{ chore.deadline|date:"Y-m-d" }}</p>
+        <form method="post" action="{% url 'chores:chore_delete' chore.pk %}">
+            {% csrf_token %}
+            <button type="submit">Delete chore</button>
+        </form>
+        <p><a href="{% url 'chores:chore_list' %}">Cancel</a></p>
+    </main>
+</body>
+</html>

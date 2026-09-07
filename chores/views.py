@@ -35,3 +35,24 @@ def chore_complete(request, pk):
     chore.is_completed = True
     chore.save(update_fields=["is_completed"])
     return redirect("chores:chore_list")
+
+
+@require_http_methods(["GET", "POST"])
+def chore_edit(request, pk):
+    chore = get_object_or_404(Chore, pk=pk)
+    form = ChoreForm(
+        request.POST if request.method == "POST" else None, instance=chore
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("chores:chore_list")
+    return render(request, "chores/chore_form.html", {"form": form, "chore": chore})
+
+
+@require_http_methods(["GET", "POST"])
+def chore_delete(request, pk):
+    chore = get_object_or_404(Chore, pk=pk)
+    if request.method == "POST":
+        chore.delete()
+        return redirect("chores:chore_list")
+    return render(request, "chores/chore_confirm_delete.html", {"chore": chore})
